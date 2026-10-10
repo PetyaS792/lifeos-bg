@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LifeOS BG — Играй реалния си живот</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0f1a;
+    --card: #131a2b;
+    --card2: #1a2338;
+    --accent: #7c5cff;
+    --accent2: #22d3ee;
+    --good: #22c55e;
+    --text: #e6ecff;
+    --muted: #8b98b8;
+    --radius: 16px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1a1440 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .logo { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
+  .logo span { color: var(--accent); }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #23304d;
+  }
+  .avatar { font-size: 20px; }
+  .screen { display: none; animation: fade .3s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .card {
+    background: var(--card); border: 1px solid #23304d;
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  h2 { font-size: 18px; margin-bottom: 12px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  button {
+    font: inherit; cursor: pointer; border: none; border-radius: 12px;
+    padding: 12px 18px; font-weight: 600; transition: .15s;
+    background: var(--accent); color: white;
+  }
+  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  button.ghost { background: transparent; border: 1px solid #2b3a5e; color: var(--text); }
+  button.ghost:hover { background: #1a2338; }
+  .chars { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
+  .char {
+    background: var(--card2); border: 2px solid #23304d; border-radius: var(--radius);
+    padding: 18px; text-align: center; cursor: pointer; transition: .2s;
+  }
+  .char:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .char.selected { border-color: var(--accent); background: linear-gradient(180deg, #241a55, #1a2338); }
+  .char .emoji { font-size: 44px; display: block; margin-bottom: 8px; }
+  .char .name { font-weight: 700; margin-bottom: 4px; }
+  .char .desc { font-size: 12px; color: var(--muted); }
+  .level-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .lvl-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; flex-shrink: 0;
+  }
+  .bar { flex: 1; height: 14px; background: #1a2338; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .5s; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 8px; }
+  .stat { background: var(--card2); padding: 14px; border-radius: 12px; text-align: center; }
+  .stat .val { font-size: 22px; font-weight: 800; }
+  .stat .lbl { font-size: 12px; color: var(--muted); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .tab {
+    background: transparent; border: 1px solid #23304d; color: var(--muted);
+    padding: 9px 16px; border-radius: 999px; white-space: nowrap; font-size: 14px;
+  }
+  .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .mission {
+    background: var(--card2); border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+    border-left: 4px solid var(--accent);
+  }
+  .mission.done { opacity: .55; border-left-color: var(--good); }
+  .mission .m-emoji { font-size: 26px; }
+  .mission .m-body { flex: 1; }
+  .mission .m-title { font-weight: 600; }
+  .mission .m-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .mission button { padding: 8px 14px; font-size: 13px; }
+  .mission.done button { background: var(--good); }
+  .map-row { margin-bottom: 14px; }
+  .map-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .map-bar { height: 10px; background: #1a2338; border-radius: 999px; overflow: hidden; }
+  .map-fill { height: 100%; border-radius: 999px; transition: width .6s; }
+  .ai-box { background: linear-gradient(135deg, #241a55, #1a2338); border: 1px solid #3a2d7a; }
+  .chat { max-height: 340px; overflow-y: auto; margin-bottom: 12px; }
+  .msg { padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 85%; font-size: 14px; white-space: pre-wrap; }
+  .msg.ai { background: #1f2a45; }
+  .msg.me { background: var(--accent); margin-left: auto; }
+  .chat-input { display: flex; gap: 8px; }
+  .chat-input input {
+    flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid #2b3a5e;
+    background: #0f1626; color: var(--text); font: inherit;
+  }
+  .chat-input input:focus { outline: 2px solid var(--accent); }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--good); color: white; padding: 14px 22px; border-radius: 12px;
+    font-weight: 600; transition: .3s; z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">Life<span>OS</span> BG</div>
+    <div class="user-chip" id="userChip" style="display:none">
+      <span class="avatar" id="hdrAvatar">🧙</span>
+      <span id="hdrName">Играч</span>
+    </div>
+  </header>
+
+  <section id="screen-create" class="screen active">
+    <div class="card">
+      <h1>Избери своя персонаж</h1>
+      <p class="muted">Всеки персонаж дава различен бонус към XP в дадена област. Изборът е завинаги!</p>
+      <div class="chars" id="charList"></div>
+      <div style="margin-top:20px">
+        <input id="playerName" placeholder="Твоето име..." style="padding:12px 14px;border-radius:12px;border:1px solid #2b3a5e;background:#0f1626;color:var(--text);font:inherit;width:100%;margin-bottom:12px">
+        <button id="startBtn" disabled>Започни приключението 🚀</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-main" class="screen">
+    <div class="card">
+      <div class="level-row">
+        <div class="lvl-badge" id="lvlBadge">1</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <strong id="lvlTitle">Ниво 1 — Новак</strong>
+            <span class="muted" id="xpText">0 / 100 XP</span>
+          </div>
+          <div class="bar"><div class="bar-fill" id="xpBar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="val" id="statStreak">0🔥</div><div class="lbl">Серия дни</div></div>
+        <div class="stat"><div class="val" id="statDone">0</div><div class="lbl">Изпълнени мисии</div></div>
+        <div class="stat"><div class="val" id="statTotal">0</div><div class="lbl">Общо XP</div></div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="missions">🎯 Мисии</button>
+      <button class="tab" data-tab="ai">🤖 AI План</button>
+      <button class="tab" data-tab="map">🗺️ Карта</button>
+    </div>
+
+    <div id="tab-missions">
+      <div class="card">
+        <h2>🎯 Мисии за днес</h2>
+        <p class="muted" style="margin-bottom:14px">Изпълни ги в реалния живот и натисни „Готово", за да вземеш XP.</p>
+        <div id="missionList"></div>
+        <button class="ghost" id="newMissionsBtn" style="margin-top:10px">🔄 Нови мисии</button>
+      </div>
+    </div>
+
+    <div id="tab-ai" style="display:none">
+      <div class="card ai-box">
+        <h2>🤖 AI Помощник</h2>
+        <p class="muted" style="margin-bottom:14px">Кажи ми целта си (напр. „искам да спортувам", „да уча повече", „да се виждам с приятели").</p>
+        <div class="chat" id="chat"></div>
+        <div class="chat-input">
+          <input id="chatInput" placeholder="Напиши целта си..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button onclick="sendChat()">Изпрати</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-map" style="display:none">
+      <div class="card">
+        <h2>🗺️ Карта на развитието</h2>
+        <p class="muted" style="margin-bottom:16px">Виж колко XP имаш във всяка област на живота.</p>
+        <div id="mapContainer"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ DATA ============ */
+const CHARACTERS = [
+  { id: 'sage',   emoji: '🧙', name: 'Мъдрец',   desc: '+20% XP за Ум',      bonus: 'mind' },
+  { id: 'warrior',emoji: '⚔️', name: 'Воин',     desc: '+20% XP за Здраве',  bonus: 'health' },
+  { id: 'merchant',emoji:'💰', name: 'Търговец', desc: '+20% XP за Кариера', bonus: 'career' },
+  { id: 'bard',   emoji: '🎭', name: 'Бард',     desc: '+20% XP за Социал',  bonus: 'social' },
+];
+
+const AREAS = {
+  health: { name: 'Здраве',    emoji: '💪', color: '#22c55e' },
+  mind:   { name: 'Ум',        emoji: '🧠', color: '#7c5cff' },
+  career: { name: 'Кариера',   emoji: '💼', color: '#f59e0b' },
+  social: { name: 'Социал',    emoji: '🤝', color: '#22d3ee' },
+  spirit: { name: 'Дух',       emoji: '🧘', color: '#ec4899' },
+};
+
+const MISSION_POOL = [
+  { area:'health', emoji:'🚶', title:'Излез на 15-минутна разходка', xp:20, diff:'лесно' },
+  { area:'health', emoji:'💧', title:'Изпий 2 литра вода днес',       xp:15, diff:'лесно' },
+  { area:'health', emoji:'🏃', title:'Направи 20 клякания',           xp:25, diff:'средно' },
+  { area:'health', emoji:'🥗', title:'Изяж 1 здравословно ядене',     xp:20, diff:'лесно' },
+  { area:'health', emoji:'😴', title:'Легни си преди 23:00',          xp:30, diff:'средно' },
+  { area:'mind',   emoji:'📚', title:'Чети 15 минути книга',          xp:20, diff:'лесно' },
+  { area:'mind',   emoji:'🎓', title:'Научи 5 нови думи на чужд език',xp:25, diff:'средно' },
+  { area:'mind',   emoji:'✍️', title:'Напиши 3 неща, за които си благодарен', xp:15, diff:'лесно' },
+  { area:'mind',   emoji:'🎥', title:'Гледай образователно видео',    xp:15, diff:'лесно' },
+  { area:'career', emoji:'📝', title:'Направи 1 задача, която отлагаш', xp:40, diff:'трудно' },
+  { area:'career', emoji:'📧', title:'Изчисти входящата си поща',     xp:20, diff:'лесно' },
+  { area:'career', emoji:'💡', title:'Запиши 1 нова идея за проект',  xp:15, diff:'лесно' },
+  { area:'career', emoji:'⏱️', title:'Работи 25 мин фокусирано',      xp:30, diff:'средно' },
+  { area:'social', emoji:'📞', title:'Позвъни на близък човек',       xp:25, diff:'лесно' },
+  { area:'social', emoji:'💬', title:'Напиши комплимент на някого',   xp:15, diff:'лесно' },
+  { area:'social', emoji:'☕', title:'Планирай среща с приятел',      xp:30, diff:'средно' },
+  { area:'social', emoji:'🤝', title:'Помогни на някого с нещо',      xp:25, diff:'средно' },
+  { area:'spirit', emoji:'🧘', title:'Медитирай 5 минути',            xp:20, diff:'лесно' },
+  { area:'spirit', emoji:'🌳', title:'Прекарай 10 мин навън без телефон', xp:20, diff:'лесно' },
+  { area:'spirit', emoji:'🎨', title:'Направи нещо творческо',        xp:30, diff:'средно' },
+  { area:'spirit', emoji:'📔', title:'Запиши как се чувстваш днес',   xp:15, diff:'лесно' },
+];
+
+const LEVEL_TITLES = ['Новак','Ученик','Странник','Изследовател','Войн','Майстор','Шампион','Легенда','Митичен','Безсмъртен'];
+const XP_PER_LEVEL = lvl => 100 + (lvl - 1) * 50;
+
+/* ============ STATE ============ */
+let state = loadState() || {
+  character: null, name: 'Играч', xp: 0, totalXp: 0, level: 1,
+  completed: 0, streak: 0, lastPlayed: null,
+  areaXp: { health:0, mind:0, career:0, social:0, spirit:0 },
+  todayMissions: [], chatHistory: [], missionDate: null,
+};
+
+function saveState() { localStorage.setItem('lifeos_bg', JSON.stringify(state)); }
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('lifeos_bg')); } catch { return null; }
+}
+
+/* ============ INIT ============ */
+function initCreate() {
+  const list = document.getElementById('charList');
+  list.innerHTML = CHARACTERS.map(c => `
+    <div class="char" data-id="${c.id}">
+      <span class="emoji">${c.emoji}</span>
+      <div class="name">${c.name}</div>
+      <div class="desc">${c.desc}</div>
+    </div>`).join('');
+  list.querySelectorAll('.char').forEach(el => {
+    el.onclick = () => {
+      list.querySelectorAll('.char').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('startBtn').disabled = false;
+    };
+  });
+  document.getElementById('startBtn').onclick = startGame;
+}
+
+function startGame() {
+  const sel = document.querySelector('.char.selected');
+  const name = document.getElementById('playerName').value.trim() || 'Играч';
+  if (!sel) return;
+  state.character = sel.dataset.id;
+  state.name = name;
+  state.lastPlayed = todayStr();
+  generateMissions();
+  saveState();
+  document.getElementById('screen-create').classList.remove('active');
+  document.getElementById('screen-main').classList.add('active');
+  document.getElementById('userChip').style.display = 'flex';
+  render();
+}
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function generateMissions() {
+  const byArea = {};
+  MISSION_POOL.forEach(m => (byArea[m.area] ||= []).push(m));
+  const picks = [];
+  Object.keys(byArea).forEach(area => {
+    const pool = byArea[area];
+    picks.push({ ...pool[Math.floor(Math.random()*pool.length)], done: false, id: crypto.randomUUID() });
+  });
+  state.todayMissions = picks;
+  state.missionDate = todayStr();
+  saveState();
+}
+
+function checkNewDay() {
+  if (state.missionDate !== todayStr()) {
+    state.lastPlayed = todayStr();
+    generateMissions();
+    saveState();
+  }
+}
+
+/* ============ RENDER ============ */
+function render() {
+  checkNewDay();
+  if (!state.character) return;
+  const ch = CHARACTERS.find(c => c.id === state.character);
+  document.getElementById('hdrAvatar').textContent = ch.emoji;
+  document.getElementById('hdrName').textContent = state.name;
+  const needed = XP_PER_LEVEL(state.level);
+  document.getElementById('lvlBadge').textContent = state.level;
+  document.getElementById('lvlTitle').textContent = `Ниво ${state.level} — ${LEVEL_TITLES[Math.min(state.level-1, LEVEL_TITLES.length-1)]}`;
+  document.getElementById('xpText').textContent = `${state.xp} / ${needed} XP`;
+  document.getElementById('xpBar').style.width = Math.min(100, state.xp/needed*100) + '%';
+  document.getElementById('statStreak').textContent = state.streak + '🔥';
+  document.getElementById('statDone').textContent = state.completed;
+  document.getElementById('statTotal').textContent = state.totalXp;
+  renderMissions();
+  renderMap();
+  renderChat();
+}
+
+function renderMissions() {
+  const list = document.getElementById('missionList');
+  if (!state.todayMissions.length) generateMissions();
+  list.innerHTML = state.todayMissions.map(m => {
+    const area = AREAS[m.area];
+    return `<div class="mission ${m.done?'done':''}" style="border-left-color:${area.color}">
+      <span class="m-emoji">${m.emoji}</span>
+      <div class="m-body">
+        <div class="m-title">${m.title}</div>
+        <div class="m-meta">${area.emoji} ${area.name} · +${m.xp} XP · ${m.diff}</div>
+      </div>
+      <button onclick="completeMission('${m.id}')" ${m.done?'disabled':''}>${m.done?'✅ Готово':'Готово'}</button>
+    </div>`;
+  }).join('');
+}
+
+function renderMap() {
+  const c = document.getElementById('mapContainer');
+  c.innerHTML = Object.entries(AREAS).map(([key, area]) => {
+    const xp = state.areaXp[key] || 0;
+    const max = Math.max(100, ...Object.values(state.areaXp));
+    const pct = Math.min(100, xp/max*100);
+    return `<div class="map-row">
+      <div class="map-label"><span>${area.emoji} ${area.name}</span><span class="muted">${xp} XP</span></div>
+      <div class="map-bar"><div class="map-fill" style="width:${pct}%;background:${area.color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderChat() {
+  const chat = document.getElementById('chat');
+  if (!state.chatHistory.length) {
+    chat.innerHTML = `<div class="msg ai">Здравей, ${state.name}! Кажи ми какво искаш да подобриш — ще ти направя план с конкретни стъпки. 🎯</div>`;
+    return;
+  }
+  chat.innerHTML = state.chatHistory.map(m =>
+    `<div class="msg ${m.role}">${m.text}</div>`).join('');
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ============ ACTIONS ============ */
+window.completeMission = function(id) {
+  const m = state.todayMissions.find(x => x.id === id);
+  if (!m || m.done) return;
+  m.done = true;
+  const ch = CHARACTERS.find(c => c.id === state.character);
+  const bonus = ch.bonus === m.area ? 1.2 : 1;
+  const gained = Math.round(m.xp * bonus);
+  state.xp += gained;
+  state.totalXp += gained;
+  state.areaXp[m.area] += gained;
+  state.completed++;
+  state.lastPlayed = todayStr();
+
+  const todayKey = 'streakDay_' + todayStr();
+  if (!localStorage.getItem(todayKey)) {
+    state.streak++;
+    localStorage.setItem(todayKey, '1');
+  }
+
+  let leveled = false;
+  while (state.xp >= XP_PER_LEVEL(state.level)) {
+    state.xp -= XP_PER_LEVEL(state.level);
+    state.level++;
+    leveled = true;
+  }
+
+  toast(`+${gained} XP${bonus>1?' (бонус персонаж!)':''}${leveled?' 🎉 НОВО НИВО!':''}`);
+  saveState();
+  render();
+};
+
+document.getElementById('newMissionsBtn').onclick = () => {
+  generateMissions();
+  renderMissions();
+  toast('🔄 Нови мисии!');
+};
+
+/* ============ PUTER.JS AI ============ */
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  state.chatHistory.push({ role: 'me', text });
+  input.value = '';
+  renderChat();
+
+  // Loading indicator
+  const chat = document.getElementById('chat');
+  const typing = document.createElement('div');
+  typing.className = 'msg ai';
+  typing.textContent = '⏳ Мисля...';
+  typing.id = 'typingIndicator';
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const systemPrompt = `Ти си "LifeOS AI" — личен коуч в приложение, което превръща реалния живот в игра.
+Отговаряй на български, топло и конкретно. Макс 150 думи.
+Петте области: Здраве 💪, Ум 🧠, Кариера 💼, Социал 🤝, Дух 🧘.
+Завършвай с конкретна малка стъпка за ДНЕС.
+
+КОНТЕКСТ НА ИГРАЧА:
+Име: ${state.name}
+Ниво: ${state.level}, XP: ${state.totalXp}, Серия: ${state.streak} дни`;
+
+    const history = state.chatHistory.slice(-8).map(m => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.text
+    }));
+
+    const reply = await puter.ai.chat([
+      { role: 'system', content: systemPrompt },
+      ...history
+    ], {
+      model: 'claude-sonnet-4.6',
+      stream: false
+    });
+
+    document.getElementById('typingIndicator')?.remove();
+
+    const replyText = typeof reply === 'string'
+      ? reply
+      : (reply?.message?.content || reply?.text || 'Няма отговор');
+
+    state.chatHistory.push({ role: 'ai', text: replyText });
+    saveState();
+    renderChat();
+
+  } catch (err) {
+    document.getElementById('typingIndicator')?.remove();
+    state.chatHistory.push({
+      role: 'ai',
+      text: `⚠️ AI-ът не отговори: ${err.message}\n\nАко това е първият ти опит — появи се прозорец за вход в Puter. Влез с безплатен акаунт и опитай пак.`
+    });
+    renderChat();
+  }
+}
+window.sendChat = sendChat;
+
+/* ============ UI helpers ============ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+document.getElementById('tabs').addEventListener('click', e => {
+  if (!e.target.classList.contains('tab')) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  const tab = e.target.dataset.tab;
+  document.getElementById('tab-missions').style.display = tab === 'missions' ? 'block' : 'none';
+  document.getElementById('tab-ai').style.display       = tab === 'ai' ? 'block' : 'none';
+  document.getElementById('tab-map').style.display      = tab === 'map' ? 'block' : 'none';
+});
+
+/* ============ BOOT ============ */
+if (state.character) {
+  document.getElementById('screen-create').classList.remove('active');
+  document.getElementById('screen-main').classList.add('active');
+  document.getElementById('userChip').style.display = 'flex';
+  render();
+} else {
+  initCreate();
+}
+</script>
+</body>
+</html>
