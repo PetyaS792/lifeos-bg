@@ -459,10 +459,7 @@ async function sendChat() {
 
     document.getElementById('typingIndicator')?.remove();
 
-    const replyText = typeof reply === 'string'
-      ? reply
-      : (reply?.message?.content || reply?.text || 'Няма отговор');
-
+        const replyText = extractText(reply);
     state.chatHistory.push({ role: 'ai', text: replyText });
     saveState();
     renderChat();
