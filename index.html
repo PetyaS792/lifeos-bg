@@ -475,6 +475,44 @@ async function sendChat() {
 }
 window.sendChat = sendChat;
 
+ /* Извлича текста от всякакъв формат, който Puter връща */
+function extractText(reply) {
+  if (!reply) return '(празен отговор)';
+
+  // 1. Просто string
+  if (typeof reply === 'string') return reply;
+
+  // 2. { text: "..." }
+  if (typeof reply.text === 'string') return reply.text;
+
+  // 3. { message: { content: "..." } } → Claude често връща масив
+  const content = reply.message?.content ?? reply.content;
+  if (typeof content === 'string') return content;
+
+  // 4. content е масив от блокове: [{ type: 'text', text: '...' }, ...]
+  if (Array.isArray(content)) {
+    const parts = content
+      .map(block => {
+        if (typeof block === 'string') return block;
+        if (block?.text) return block.text;
+        if (block?.type === 'text' && block.text) return block.text;
+        return '';
+      })
+      .filter(Boolean);
+    if (parts.length) return parts.join('\n');
+  }
+
+  // 5. { choices: [{ message: { content: "..." } }] } — OpenAI формат
+  if (Array.isArray(reply.choices) && reply.choices[0]?.message?.content) {
+    return reply.choices[0].message.content;
+  }
+
+  // 6. Fallback — покажи нещо, но не [object Object]
+  console.warn('Непознат формат на отговор:', reply);
+  return 'AI-ът отговори, но във формат, който не разпознавам. Ето суровите данни:\n' +
+         JSON.stringify(reply, null, 2).slice(0, 500);
+}
+
 /* ============ UI helpers ============ */
 function toast(msg) {
   const el = document.getElementById('toast');
